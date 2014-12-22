@@ -1,0 +1,73 @@
+---
+title: "Coursera Practical Machine Learning Project"
+author: "Jeff Hedberg"
+date: "Sunday, December 21, 2014"
+output: html_document
+---
+
+###Executive Summary:  
+This report is created for the Practical Machine Learning Coursera Course Project. It summarizes the process and the findings from building a model using machine learning techniques aimed at predicting barbell lifting acticity class's based off training acceleerometer and gyroscope data from several individuals.   
+
+I would like to reference the source data from: http://groupware.les.inf.puc-rio.br/har   
+This project would have not been possible without the dataset, so thanks to them for providing it and allowing others to learn from it.   
+
+The training set for this project can be optained here:  https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv   
+The test set for this project can be optained here:  https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv   
+<br>    
+  
+   
+####Analysis Steps  
+#####1.  
+I'll start by loading the library "caret" for machine learning functions, and also "ggplot2" for plotting functions.   
+I then import the "pml-training.csv" file and store it into the "all_data" dataframe.   
+I then import the "pml-testing.csv" file and store it into the "validation" dataframe.   
+
+I look a the "all_data" dataframe values using the head() function and notice that a significant amount are either full of NULL or blank values.  Additionally, there are date or non-numeric fields that will not be useful for the model building process.    
+I remove these fields from both "all_data" and "validation" and store the reduced versions into "reduced_data" and "validation_reduced_data" dataframes.  
+
+```{r, message=FALSE, echo=TRUE, eval=FALSE}
+library(caret)
+library(ggplot2)
+
+head(all_data,100)
+
+all_data<-read.csv("pml-training.csv", header = TRUE)
+validation<-read.csv("pml-testing.csv", header = TRUE)
+
+reduced_data<-all_data[,c(8:11,37:49,60:68,84:86,102,113:124,140,151:160)] #without user_name
+validation_reduced_data<-validation[,c(8:11,37:49,60:68,84:86,102,113:124,140,151:160)] #without user_name
+```
+<br>    
+  
+#####2.  
+I set the seed to a constant value (for repeatability) and then divide the the "reduced_data" dataframe into training and testing sets (using 75/25 split).   
+These are then stored into dataframes called "training" and "testing".    
+I then fit a random forest model to the training dataset and store the resulting model into rf_fit.   
+```{r, message=FALSE, echo=TRUE, eval=FALSE}
+set.seed(1000)
+inTrain = createDataPartition(reduced_data$classe, p = 75/100, list=FALSE)
+training = reduced_data[inTrain,]
+testing = reduced_data[-inTrain,]
+
+rf_fit<-train(classe ~ ., data=training, method="rf", prox=TRUE)
+```
+<br>    
+  
+#####3. 
+I then use the predict function to use the model with the testing dataframe and exaluate the overall model performance.     
+I plot the model predicted values as compared to the actual values and make a table for comparison.    
+I then calculate the accuracy by adding up the diagonal counts and dividing by the total number of observations.    
+I get 99,.25% for this model, abnd expect the out of sample error to be similar, but slightly higher.    
+```{r, message=FALSE, echo=TRUE, eval=FALSE}
+pred_rf<-predict(rf_fit,testing)
+pred_results<-table(validation_reduced_data$problem_id,pred_rf)
+100*(1393+944+840+795+895)/4904  #99.25%
+```
+
+```{r, message=FALSE, echo=TRUE, eval=FALSE}
+pred_rf<-predict(rf_fit,validation_reduced_data)
+temp<-names(validation)
+```
+
+
+
